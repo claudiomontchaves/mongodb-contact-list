@@ -14,6 +14,7 @@ public class ContactList {
 
     private static final String URL = "mongodb://localhost:27017";
     private static final String DATABASE_NAME = "contacts";
+    private static final String THUMBS_UP = "\ud83d\udc4d";
 
     private MongoClient mongoClient;
     private MongoDatabase database;
@@ -36,10 +37,10 @@ public class ContactList {
 
         while (true) {
             println("---------------------------------------");
-            println("1. List Contact Lists");
-            println("2. Create Contact List");
-            println("3. Remove Contact List");
-            println("4. Exit");
+            println("1) List Contact Lists");
+            println("2) Create Contact List");
+            println("3) Remove Contact List");
+            println("4) Exit");
             println("---------------------------------------");
             print("> ");
 
@@ -79,14 +80,14 @@ public class ContactList {
         print("New contact list name: ");
         String[] values = readConsole();
         database.createCollection(values[0]);
-        pressAnyKey("Contact list created.");
+        pressAnyKey("Contact list created. " + THUMBS_UP);
     }
 
     private void removeContactList() {
         print("Contact list to be removed: ");
         String[] values = readConsole();
         database.getCollection(values[0]).drop();
-        pressAnyKey("Contact list removed.");
+        pressAnyKey("Contact list removed." + THUMBS_UP);
     }
 
     private void exit() {
@@ -113,7 +114,7 @@ public class ContactList {
 
     private void pressAnyKey(String msg) {
         if (!msg.isEmpty()) {
-            println(msg);
+            println("\n" + msg);
         }
         println("\nPress any key to continue.");
         readConsole();
