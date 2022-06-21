@@ -1,20 +1,30 @@
 
 package com.tec.cmc.mongodb;
 
+import static com.mongodb.client.model.Filters.eq;
+
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.json.JSONObject;
+
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.client.result.DeleteResult;
 
 public class ContactList {
 
     private static final String URL = "mongodb://localhost:27017";
     private static final String DATABASE_NAME = "contacts";
     private static final String THUMBS_UP = "\ud83d\udc4d";
+    private static final String THUMBS_DOWN = "\ud83d\udc4e";
 
     private MongoClient mongoClient;
     private MongoDatabase database;
@@ -40,14 +50,17 @@ public class ContactList {
             println("1) List Contact Lists");
             println("2) Create Contact List");
             println("3) Remove Contact List");
-            println("4) Exit");
+            println("4) List Contacts");
+            println("5) Create Contact");
+            println("6) Remove Contact");
+            println("7) Exit");
             println("---------------------------------------");
             print("> ");
 
-            String[] cmd = readConsole();
+            String cmd = readConsole();
             clearConsole();
 
-            switch (cmd[0]) {
+            switch (cmd) {
                 case "1":
                     listContactLists();
                     break;
@@ -58,6 +71,15 @@ public class ContactList {
                     removeContactList();
                     break;
                 case "4":
+                    listContacts();
+                    break;
+                case "5":
+                    createContact();
+                    break;
+                case "6":
+                    removeContact();
+                    break;
+                case "7":
                     exit();
                     break;
                 default:
@@ -78,16 +100,54 @@ public class ContactList {
 
     private void createContactList() {
         print("New contact list name: ");
-        String[] values = readConsole();
-        database.createCollection(values[0]);
+        String contactListName = readConsole();
+        database.createCollection(contactListName);
         pressAnyKey("Contact list created. " + THUMBS_UP);
     }
 
     private void removeContactList() {
         print("Contact list to be removed: ");
-        String[] values = readConsole();
-        database.getCollection(values[0]).drop();
+        String contactListName = readConsole();
+        database.getCollection(contactListName).drop();
         pressAnyKey("Contact list removed." + THUMBS_UP);
+    }
+
+    private void listContacts() {
+        MongoCollection<Document> collection = getCollection();
+        clearConsole();
+        FindIterable<Document> iterDoc = collection.find();
+        Iterator<Document> it = iterDoc.iterator();
+        while (it.hasNext()) {
+            JSONObject jso = new JSONObject(it.next().toJson());
+            println("---------------------------------------------------");
+            println(jso.toString(3));
+        }
+        pressAnyKey();
+    }
+
+    private void createContact() {
+        MongoCollection<Document> collection = getCollection();
+        print("Document: ");
+        String json = readConsole();
+        try {
+            collection.insertOne(Document.parse(json));
+            pressAnyKey("Contact list created. " + THUMBS_UP);
+        } catch (Exception e) {
+            pressAnyKey("Error creating contact: " + e.getMessage() + " " + THUMBS_DOWN);
+        }
+    }
+
+    private void removeContact() {
+        MongoCollection<Document> collection = getCollection();
+        print("Contact name to be deleted: ");
+        String name = readConsole();
+        Bson filter = eq("name", name);
+        DeleteResult result = collection.deleteOne(filter);
+        if (result.getDeletedCount() == 1) {
+            pressAnyKey("Contact removed. "+ THUMBS_UP);
+        } else {
+            pressAnyKey("Could not find '" + name + "''. " + THUMBS_DOWN);
+        }
     }
 
     private void exit() {
@@ -103,9 +163,8 @@ public class ContactList {
         System.out.println(msg);
     }
 
-    private String[] readConsole() {
-        String line = System.console().readLine();
-        return line.split(" ");
+    private String readConsole() {
+        return System.console().readLine();
     }
 
     private void pressAnyKey() {
@@ -124,6 +183,12 @@ public class ContactList {
     private void clearConsole() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
+    }
+
+    private MongoCollection<Document> getCollection() {
+        print("Contact list name: ");
+        String collectionName = readConsole();
+        return database.getCollection(collectionName);
     }
     
 }
