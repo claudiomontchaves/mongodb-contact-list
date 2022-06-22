@@ -119,6 +119,8 @@ public class ContactList {
         Iterator<Document> it = iterDoc.iterator();
         while (it.hasNext()) {
             JSONObject jso = new JSONObject(it.next().toJson());
+            JSONObject id = jso.getJSONObject("_id");
+            jso.put("_id", id.get("$oid"));
             println("---------------------------------------------------");
             println(jso.toString(3));
         }
@@ -127,11 +129,19 @@ public class ContactList {
 
     private void createContact() {
         MongoCollection<Document> collection = getCollection();
-        print("Document: ");
-        String json = readConsole();
+        print("Name: ");
+        String name = readConsole();
+        print("Number: ");
+        String number = readConsole();
+        print("Company: ");
+        String company = readConsole();
+        JSONObject json = new JSONObject();
+        json.put("name", name);
+        json.put("number", number);
+        json.put("company", company);
         try {
-            collection.insertOne(Document.parse(json));
-            pressAnyKey("Contact list created. " + THUMBS_UP);
+            collection.insertOne(Document.parse(json.toString()));
+            pressAnyKey("Contact created. " + THUMBS_UP);
         } catch (Exception e) {
             pressAnyKey("Error creating contact: " + e.getMessage() + " " + THUMBS_DOWN);
         }
